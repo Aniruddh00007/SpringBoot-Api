@@ -1,3 +1,3 @@
-# SpringBoot-Api
-Only API
- which is created for some basic projects. 
+
+# Basic APIs
+This repository contains simple APIs created for learning and experimenting with basic project structures.
