@@ -9,55 +9,41 @@ import in.main.beans.User_credentials;
 
 @RestController
 @RequestMapping("/Userdata")
+@CrossOrigin(origins = "http://localhost:5173")
+
 public class MyControllers {
 
     @Autowired
-    private User_Service_interf userintf;
+    private User_Service_interf userService;
 
     // ✅ Add new user
     @PostMapping
-    public User_credentials addUser_credentials(
-            @RequestParam("id1") int userId,
-            @RequestParam("name1") String name,
-            @RequestParam("pass1") String password,
-            @RequestParam("Amount1") Long amount,
-            @RequestParam("father1") String fatherName,
-            @RequestParam("City1") String city,
-            @RequestParam("Upi1") int upi) {
-
-        User_credentials user = new User_credentials();
-        user.setUserId(userId);
-        user.setName(name);
-        user.setPassword(password);
-        user.setAmount(amount);
-        user.setFatherName(fatherName);
-        user.setCity(city);
-        user.setUPI(upi);
-
-        return userintf.addUser_credentials(user);
+    public User_credentials addUser(@RequestBody User_credentials user) {
+        return userService.addUser_credentials(user);
     }
 
-  
+    // ✅ Get all users
     @GetMapping
-    public List<User_credentials> getAllCredentials() {
-        return userintf.getallCredentials();
+    public List<User_credentials> getAllUsers() {
+        return userService.getallCredentials();
     }
 
-
+    // ✅ Get user by ID
     @GetMapping("/{id}")
-    public User_credentials getUserById(@PathVariable("id") int userId) {
-        return userintf.getUser_credentials(userId);
+    public User_credentials getUserById(@PathVariable("id") String userId) {
+        return userService.getUser_credentials(userId);
     }
 
-
-    @PutMapping
-    public User_credentials updateUser(@RequestBody User_credentials updatedUser) {
-        return userintf.updateUser_credentials(updatedUser);
+    // ✅ Update user
+    @PutMapping("/{id}")
+    public User_credentials updateUser(@PathVariable("id") String userId, @RequestBody User_credentials updatedUser) {
+        updatedUser.setUserId(userId);
+        return userService.updateUser_credentials(updatedUser);
     }
 
- 
+    // ✅ Delete user
     @DeleteMapping("/{id}")
-    public boolean deleteUser(@PathVariable("id") int userId) {
-        return userintf.deleteUser_credentials(userId);
+    public boolean deleteUser(@PathVariable("id") String userId) {
+        return userService.deleteUser_credentials(userId);
     }
 }
