@@ -15,12 +15,14 @@ public class SystemMetricsScheduler {
         this.metricsService = metricsService;
     }
 
-    //  Runs every 5 seconds
+    // Runs every 5 seconds
     @Scheduled(fixedRate = 5000)
     public void run() {
 
-        metricsService.collectAndSaveMetrics();
+        // Collect + Save + Analyze
+        String result = metricsService.collectAnalyzeAndSave();
 
-        System.out.println("Metrics collected & saved successfully!");
+        // Print result
+        System.out.println(" Optimization Result: " + result);
     }
 }

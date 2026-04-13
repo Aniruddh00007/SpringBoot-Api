@@ -1,12 +1,13 @@
 package controller;
 
-
-
 import entity.SystemMetric;
 import service.MetricsService;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/metrics")
@@ -25,21 +26,37 @@ public class SystemMetricsController {
         return metricsService.getAllMetrics();
     }
 
-    //  2. Get latest metric (IMPORTANT)
+    //   Get latest metric
     @GetMapping("/latest")
     public SystemMetric getLatestMetric() {
         return metricsService.getLatestMetric();
     }
 
-    // 3. Manual trigger (for testing)
+    //  Manual trigger (for testing)
     @PostMapping("/collect")
     public SystemMetric collectNow() {
         return metricsService.collectAndSaveMetrics();
     }
 
-    // 4. Health check
+    //  Optimization API (IMPORTANT)
+    @GetMapping("/optimize")
+    public Map<String, Object> optimizeSystem() {
+
+        SystemMetric metric = metricsService.collectAndSaveMetrics();
+        String suggestion = metricsService.collectAnalyzeAndSave();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("cpuUsage", metric.getCpuUsage());
+        response.put("memoryUsage", metric.getMemoryUsage());
+        response.put("timestamp", metric.getTimestamp());
+        response.put("suggestion", suggestion);
+
+        return response;
+    }
+
+    // Health check
     @GetMapping("/health")
     public String health() {
-        return "Backend is running 🚀";
+        return "Backend is running ";
     }
 }

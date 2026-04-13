@@ -19,6 +19,8 @@ public class SystemMetric {
 
     @Column(nullable = false)
     private LocalDateTime timestamp;
+    
+    
 
     // Default constructor (JPA requires this)
     public SystemMetric() {

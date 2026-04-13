@@ -14,7 +14,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "repository",
         "entity",
         "system",
-        "scheduler"
+        "scheduler",
+        "Optimization"
 })
 @EnableJpaRepositories(basePackages = "repository") 
 @EntityScan(basePackages = "entity")
