@@ -3,7 +3,10 @@ package controller;
 import entity.SystemMetric;
 import service.MetricsService;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import Optimization.OptimizationService;
 
 import java.util.List;
 import java.util.HashMap;
@@ -13,6 +16,10 @@ import java.util.Map;
 @RequestMapping("/api/metrics")
 @CrossOrigin(origins = "http://localhost:5173")
 public class SystemMetricsController {
+	
+	@Autowired
+	private OptimizationService optimizationService;
+
 
     private final MetricsService metricsService;
 
@@ -43,9 +50,11 @@ public class SystemMetricsController {
     public Map<String, Object> optimizeSystem() {
 
         SystemMetric metric = metricsService.collectAndSaveMetrics();
-        String suggestion = metricsService.collectAnalyzeAndSave();
+
+        String suggestion = optimizationService.analyze(metric);
 
         Map<String, Object> response = new HashMap<>();
+
         response.put("cpuUsage", metric.getCpuUsage());
         response.put("memoryUsage", metric.getMemoryUsage());
         response.put("timestamp", metric.getTimestamp());
