@@ -3,90 +3,122 @@ package Optimization;
 import entity.SystemMetric;
 import org.springframework.stereotype.Service;
 import oshi.SystemInfo;
-import oshi.software.os.OSProcess;
+import oshi.hardware.CentralProcessor;
+import oshi.hardware.GlobalMemory;
 import oshi.software.os.OperatingSystem;
 
 import java.io.File;
-import java.util.List;
 
 @Service
 public class OptimizationService {
 
     public String analyze(SystemMetric metric) {
 
+        if (metric == null) {
+            return "⚠ Metric data not available";
+        }
+
         StringBuilder result = new StringBuilder();
 
-        // 🔥 CPU Check
-        if (metric.getCpuUsage() > 80) {
-            result.append("⚠ High CPU usage detected. Close heavy applications.\n");
+        double beforeCpu = metric.getCpuUsage();
+        double beforeMem = metric.getMemoryUsage();
+
+        result.append("📊 BEFORE OPTIMIZATION:\n");
+        result.append("CPU: ").append(beforeCpu).append("%\n");
+        result.append("Memory: ").append(beforeMem).append("%\n\n");
+
+        result.append("⚙️ OPTIMIZATION ACTIONS:\n");
+
+        if (beforeCpu > 80) {
+            result.append("⚠ High CPU detected\n");
         }
 
-        // 🔥 Memory Check
-        if (metric.getMemoryUsage() > 75) {
-            result.append("⚠ High Memory usage. Free some RAM.\n");
+        if (beforeMem > 75) {
+            result.append("⚠ High Memory detected\n");
         }
 
-        // 🔥 JVM Memory Cleanup
+        // GC
         System.gc();
-        result.append("✅ Garbage Collection executed.\n");
+        result.append("✅ Garbage Collection executed\n");
 
-        // 🔥 Temp File Cleanup (SAFE)
-        String tempPath = System.getProperty("java.io.tmpdir");
-        File tempDir = new File(tempPath);
+        // Temp clean
+        result.append(cleanTempFiles());
 
-        int deletedFiles = 0;
+        // 🔥 REAL AFTER METRICS (OSHI)
+        double afterCpu = getCpuUsage();
+        double afterMem = getMemoryUsage();
 
-        if (tempDir.exists() && tempDir.isDirectory()) {
-            File[] files = tempDir.listFiles();
+        result.append("\n📊 AFTER OPTIMIZATION:\n");
+        result.append("CPU: ").append(String.format("%.2f", afterCpu)).append("%\n");
+        result.append("Memory: ").append(String.format("%.2f", afterMem)).append("%\n");
 
-            if (files != null) {
-                for (File file : files) {
-                    try {
-                        // Only delete normal files (safe)
-                        if (file.isFile() && file.delete()) {
-                            deletedFiles++;
+        // Improvement
+        result.append("\n📈 IMPROVEMENT:\n");
+        result.append("CPU Reduced: ")
+                .append(String.format("%.2f", (beforeCpu - afterCpu)))
+                .append("%\n");
+
+        result.append("Memory Reduced: ")
+                .append(String.format("%.2f", (beforeMem - afterMem)))
+                .append("%\n");
+
+        result.append("\n✅ Optimization completed\n");
+
+        return result.toString();
+    }
+
+    // ---------------- TEMP CLEAN ----------------
+    private String cleanTempFiles() {
+
+        StringBuilder result = new StringBuilder();
+
+        try {
+            String tempPath = System.getProperty("java.io.tmpdir");
+            File tempDir = new File(tempPath);
+
+            int deleted = 0;
+
+            if (tempDir.exists()) {
+                File[] files = tempDir.listFiles();
+
+                if (files != null) {
+                    for (File f : files) {
+                        if (f.isFile() && f.length() < 5 * 1024 * 1024) {
+                            if (f.delete()) deleted++;
                         }
-                    } catch (Exception ignored) {}
+                    }
                 }
             }
-        }
 
-        result.append("🧹 Temp files deleted: ").append(deletedFiles).append("\n");
-
-        //  OSHI 6.4.0: Top CPU Processes (FINAL CORRECT WAY)
-        try {
-            SystemInfo si = new SystemInfo();
-            OperatingSystem os = si.getOperatingSystem();
-
-            //  Correct method for OSHI 6.4.0
-            List<OSProcess> processes = os.getProcesses();
-
-            result.append("\n🔥 Top CPU-consuming processes:\n");
-
-            processes.stream()
-                    .filter(p -> p.getProcessCpuLoadCumulative() > 0.01) // ignore idle processes
-                    .sorted((p1, p2) -> Double.compare(
-                            p2.getProcessCpuLoadCumulative(),
-                            p1.getProcessCpuLoadCumulative()
-                    ))
-                    .limit(5)
-                    .forEach(p -> {
-                        result.append("➡ ")
-                                .append(p.getName())
-                                .append(" | CPU: ")
-                                .append(String.format("%.2f", p.getProcessCpuLoadCumulative() * 100))
-                                .append("%\n");
-                    });
+            result.append("🧹 Temp files deleted: ").append(deleted).append("\n");
 
         } catch (Exception e) {
-            result.append("⚠ Unable to fetch process details.\n");
-        }
-
-        // 🔥 Default message
-        if (result.length() == 0) {
-            return "✅ System running smoothly.";
+            result.append("⚠ Temp cleanup failed\n");
         }
 
         return result.toString();
+    }
+
+    // ---------------- CPU ----------------
+    private double getCpuUsage() {
+        SystemInfo si = new SystemInfo();
+        CentralProcessor cpu = si.getHardware().getProcessor();
+
+        long[] prevTicks = cpu.getSystemCpuLoadTicks();
+        try {
+            Thread.sleep(1000);
+        } catch (Exception ignored) {}
+
+        double load = cpu.getSystemCpuLoadBetweenTicks(prevTicks);
+        return load * 100;
+    }
+
+    // ---------------- MEMORY ----------------
+    private double getMemoryUsage() {
+        SystemInfo si = new SystemInfo();
+        GlobalMemory memory = si.getHardware().getMemory();
+
+        double used = memory.getTotal() - memory.getAvailable();
+        return (used / memory.getTotal()) * 100;
     }
 }
